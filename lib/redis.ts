@@ -1,17 +1,26 @@
 import { Redis } from '@upstash/redis'
 
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || ''
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || ''
+
 export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+  url: redisUrl,
+  token: redisToken,
 })
 
 export interface Message {
   id: string
-  author: 'nova' | 'orion'
+  author: 'jaheira' | 'minsc'
   text: string
   timestamp: number
   createdAt: string
   comments: Comment[]
+}
+
+function assertRedisConfigured() {
+  if (!redisUrl || !redisToken) {
+    throw new Error('Redis is not configured: UPSTASH_REDIS_REST_URL/TOKEN or KV_REST_API_URL/TOKEN are required.')
+  }
 }
 
 export interface Comment {
@@ -22,63 +31,77 @@ export interface Comment {
   createdAt: string
 }
 
-export async function getMessages(): Promise<Message[]> {
-  try {
-    const raw = await redis.get('voicememo:messages')
-    if (!raw) return []
-    const messages = JSON.parse(raw as string) as Message[]
-    return messages.sort((a, b) => b.timestamp - a.timestamp)
-  } catch (error) {
-    console.error('Error fetching messages:', error)
-    return []
+function normalizeAuthor(value: unknown): 'jaheira' | 'minsc' {
+  if (value === 'minsc' || value === 'orion' || value === 'peto') {
+    return 'minsc'
   }
+
+  return 'jaheira'
+}
+
+function mapMessageShape(message: any): Message {
+  return {
+    ...message,
+    author: normalizeAuthor(message?.author),
+    comments: Array.isArray(message?.comments) ? message.comments : [],
+  }
+}
+
+function normalizeMessages(raw: unknown): Message[] {
+  if (!raw) return []
+
+  if (typeof raw === 'string') {
+    const parsed = JSON.parse(raw) as Message[]
+    return Array.isArray(parsed) ? parsed.map(mapMessageShape) : []
+  }
+
+  if (Array.isArray(raw)) {
+    return (raw as any[]).map(mapMessageShape)
+  }
+
+  return []
+}
+
+export async function getMessages(): Promise<Message[]> {
+  assertRedisConfigured()
+  const raw = await redis.get('voicememo:messages')
+  const messages = normalizeMessages(raw)
+  return messages.sort((a, b) => b.timestamp - a.timestamp)
 }
 
 export async function saveMessage(message: Message): Promise<void> {
-  try {
-    const messages = await getMessages()
-    messages.unshift(message)
-    await redis.set('voicememo:messages', JSON.stringify(messages))
-  } catch (error) {
-    console.error('Error saving message:', error)
-  }
+  const messages = await getMessages()
+  messages.unshift(message)
+  await redis.set('voicememo:messages', messages)
 }
 
 export async function deleteMessage(messageId: string): Promise<void> {
-  try {
-    const messages = await getMessages()
-    const filtered = messages.filter(m => m.id !== messageId)
-    await redis.set('voicememo:messages', JSON.stringify(filtered))
-  } catch (error) {
-    console.error('Error deleting message:', error)
-  }
+  const messages = await getMessages()
+  const filtered = messages.filter(m => m.id !== messageId)
+  await redis.set('voicememo:messages', filtered)
 }
 
 export async function addComment(messageId: string, comment: Comment): Promise<void> {
-  try {
-    const messages = await getMessages()
-    const message = messages.find(m => m.id === messageId)
-    if (message) {
-      if (!message.comments) message.comments = []
-      message.comments.push(comment)
-      await redis.set('voicememo:messages', JSON.stringify(messages))
-    }
-  } catch (error) {
-    console.error('Error adding comment:', error)
+  const messages = await getMessages()
+  const message = messages.find(m => m.id === messageId)
+  if (!message) {
+    throw new Error('Message not found')
   }
+
+  if (!message.comments) message.comments = []
+  message.comments.push(comment)
+  await redis.set('voicememo:messages', messages)
 }
 
 export async function deleteComment(messageId: string, commentId: string): Promise<void> {
-  try {
-    const messages = await getMessages()
-    const message = messages.find(m => m.id === messageId)
-    if (message && message.comments) {
-      message.comments = message.comments.filter(c => c.id !== commentId)
-      await redis.set('voicememo:messages', JSON.stringify(messages))
-    }
-  } catch (error) {
-    console.error('Error deleting comment:', error)
+  const messages = await getMessages()
+  const message = messages.find(m => m.id === messageId)
+  if (!message || !message.comments) {
+    throw new Error('Message or comments not found')
   }
+
+  message.comments = message.comments.filter(c => c.id !== commentId)
+  await redis.set('voicememo:messages', messages)
 }
 
 export function formatDateTime(timestamp: number): string {

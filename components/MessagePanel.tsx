@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 import { Message } from '@/lib/redis'
 
 interface MessagePanelProps {
-  author: 'nova' | 'orion'
+  author: 'jaheira' | 'minsc'
   displayName: string
   messages: Message[]
   onMessageAdd: (text: string) => Promise<void>
@@ -33,13 +33,13 @@ export const MessagePanel: React.FC<MessagePanelProps> = ({
 
   const filterMessages = messages.filter(m => m.author === author)
   const authorColors: { [key: string]: { edge: string; ring: string; tag: string; panelGlow: string } } = {
-    nova: {
+    jaheira: {
       edge: 'border-cyan-400/35',
       ring: 'focus:ring-cyan-300/70',
       tag: 'text-cyan-200 bg-cyan-500/10 border-cyan-300/30',
       panelGlow: 'shadow-[0_0_45px_rgba(34,211,238,0.09)]',
     },
-    orion: {
+    minsc: {
       edge: 'border-amber-300/35',
       ring: 'focus:ring-amber-300/70',
       tag: 'text-amber-200 bg-amber-500/10 border-amber-300/30',
@@ -149,27 +149,30 @@ export const MessagePanel: React.FC<MessagePanelProps> = ({
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-heading text-3xl tracking-[0.08em] text-zinc-100">{displayName}</h2>
         <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${colors.tag}`}>
-          {isRecording ? 'Listening' : 'Idle'}
+          Memo Channel
         </span>
       </div>
 
       <div className="mb-6 space-y-3 flex-shrink-0">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onFocus={() => {
-            if (!isRecording) startRecording()
-          }}
-          onBlur={() => {
-            if (isRecording) stopRecording()
-          }}
-          placeholder="Click in this field and start speaking in Slovak..."
-          className={`h-28 w-full resize-none rounded-2xl border border-white/15 bg-zinc-900/80 p-4 text-sm leading-6 text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:ring-2 ${colors.ring}`}
-        />
-
-        <p className="text-[12px] text-zinc-500">
-          Voice-to-text is active while this field is focused.
-        </p>
+        <div className="relative">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Write or use speech-to-text in Slovak..."
+            className={`h-28 w-full resize-none rounded-2xl border border-white/15 bg-zinc-900/80 p-4 pr-36 text-sm leading-6 text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:ring-2 ${colors.ring}`}
+          />
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`absolute right-3 top-3 rounded-lg border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition ${
+              isRecording
+                ? 'border-red-300/30 bg-red-500/10 text-red-200 hover:bg-red-500/20'
+                : 'border-white/20 bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
+            }`}
+          >
+            {isRecording ? 'Stop Voice' : 'Start Voice'}
+          </button>
+        </div>
 
         <button
           onClick={handleSendMessage}

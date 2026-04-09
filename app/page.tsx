@@ -30,18 +30,21 @@ export default function Home() {
     }
   }
 
-  const handleMessageAdd = async (author: 'nova' | 'orion', text: string) => {
+  const handleMessageAdd = async (author: 'jaheira' | 'minsc', text: string) => {
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ author, text }),
       })
-      if (response.ok) {
-        await loadMessages()
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Failed to publish note' }))
+        throw new Error(err.error || 'Failed to publish note')
       }
+      await loadMessages()
     } catch (error) {
       console.error('Error adding message:', error)
+      alert('Publishing failed. Check server/API logs and Redis credentials.')
     }
   }
 
@@ -105,10 +108,10 @@ export default function Home() {
       <div className="relative grid h-full grid-cols-2">
         <div className="flex flex-col border-r border-white/15">
           <MessagePanel
-            author="nova"
-            displayName="Nova Kade"
+            author="jaheira"
+            displayName="Jaheira"
             messages={messages}
-            onMessageAdd={(text) => handleMessageAdd('nova', text)}
+            onMessageAdd={(text) => handleMessageAdd('jaheira', text)}
             onMessageDelete={handleMessageDelete}
             onCommentAdd={(messageId, text, author) => handleCommentAdd(messageId, text, author)}
             onCommentDelete={handleCommentDelete}
@@ -117,10 +120,10 @@ export default function Home() {
 
         <div className="flex flex-col">
           <MessagePanel
-            author="orion"
-            displayName="Orion Vale"
+            author="minsc"
+            displayName="Minsc"
             messages={messages}
-            onMessageAdd={(text) => handleMessageAdd('orion', text)}
+            onMessageAdd={(text) => handleMessageAdd('minsc', text)}
             onMessageDelete={handleMessageDelete}
             onCommentAdd={(messageId, text, author) => handleCommentAdd(messageId, text, author)}
             onCommentDelete={handleCommentDelete}
