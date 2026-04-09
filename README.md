@@ -80,4 +80,4 @@ Aplikácia wykorzystuje Upstash Redis. Všetky údaje sa ukladajú v jednom kľ�
 
 ## Autor
 
-Vytvorené pre zdieľanie myšlienok medzi Stevom a Petom.
+Vytvorené pre zdieľanie myšlienok medzi dvoma random postavami.

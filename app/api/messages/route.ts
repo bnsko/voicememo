@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    if (author !== 'jaheira' && author !== 'minsc') {
+      return NextResponse.json({ error: 'Invalid author' }, { status: 400 })
+    }
+
     const message: Message = {
       id: generateId(),
       author,
