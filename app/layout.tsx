@@ -13,8 +13,8 @@ const headingFont = Orbitron({
 })
 
 export const metadata: Metadata = {
-  title: 'VoiceMemo Stream',
-  description: 'Dual-panel voice-to-text memo board with unlimited history and comments.',
+  title: 'Voice Memo Archive',
+  description: 'Premium dark dual-channel voice memo board backed by Upstash Redis.',
 }
 
 export default function RootLayout({
