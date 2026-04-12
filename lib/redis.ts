@@ -10,7 +10,7 @@ export const redis = new Redis({
 
 export interface Message {
   id: string
-  author: 'paul' | 'sylvanas'
+  author: 'clovek_vyssi' | 'clovek_nizsi'
   text: string
   timestamp: number
   createdAt: string
@@ -31,12 +31,18 @@ export interface Comment {
   createdAt: string
 }
 
-function normalizeAuthor(value: unknown): 'paul' | 'sylvanas' {
-  if (value === 'sylvanas' || value === 'minsc' || value === 'orion' || value === 'peto') {
-    return 'sylvanas'
+function normalizeAuthor(value: unknown): 'clovek_vyssi' | 'clovek_nizsi' {
+  if (
+    value === 'clovek_nizsi' ||
+    value === 'sylvanas' ||
+    value === 'minsc' ||
+    value === 'orion' ||
+    value === 'peto'
+  ) {
+    return 'clovek_nizsi'
   }
 
-  return 'paul'
+  return 'clovek_vyssi'
 }
 
 function mapMessageShape(message: any): Message {
